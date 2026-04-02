@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_compass/flutter_compass.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geomag/geomag.dart';
@@ -24,7 +26,8 @@ class CompassScreen extends StatefulWidget {
   State<CompassScreen> createState() => _CompassScreenState();
 }
 
-class _CompassScreenState extends State<CompassScreen> {
+class _CompassScreenState extends State<CompassScreen>
+    with SingleTickerProviderStateMixin {
   StreamSubscription<CompassEvent>? _subscription;
   final HeadingSmoother _smoother = HeadingSmoother();
   static final GeoMag _geoMag = GeoMag();
@@ -32,12 +35,21 @@ class _CompassScreenState extends State<CompassScreen> {
   bool _permissionGranted = false;
   bool _permissionChecked = false;
   bool _streamMissing = false;
+
   double? _heading;
   double? _declination;
   bool _waitingForGps = true;
 
-  /// Effective heading: true north when declination is known, magnetic otherwise.
-  double? get _displayHeading {
+  // --- Animation state ---
+  late final Ticker _ticker;
+  double _animatedHeading = 0;
+  bool _hasAnimTarget = false;
+  Duration _lastTick = Duration.zero;
+
+  /// Exponential-decay rate: higher = snappier. 8 gives ~120ms settle time.
+  static const double _lerpSpeed = 8.0;
+
+  double? get _targetHeading {
     final h = _heading;
     if (h == null) return null;
     final dec = _declination;
@@ -50,7 +62,46 @@ class _CompassScreenState extends State<CompassScreen> {
   @override
   void initState() {
     super.initState();
+    _ticker = createTicker(_onTick)..start();
     _bootstrap();
+  }
+
+  void _onTick(Duration elapsed) {
+    final target = _targetHeading;
+    if (target == null) return;
+
+    if (!_hasAnimTarget) {
+      _animatedHeading = target;
+      _hasAnimTarget = true;
+      _lastTick = elapsed;
+      setState(() {});
+      return;
+    }
+
+    final dtSec = _lastTick == Duration.zero
+        ? 1 / 60
+        : (elapsed - _lastTick).inMicroseconds / 1e6;
+    _lastTick = elapsed;
+
+    double diff = target - _animatedHeading;
+    while (diff > 180) {
+      diff -= 360;
+    }
+    while (diff < -180) {
+      diff += 360;
+    }
+
+    if (diff.abs() < 0.01) {
+      if (_animatedHeading != target) {
+        _animatedHeading = target;
+        setState(() {});
+      }
+      return;
+    }
+
+    final t = 1.0 - math.exp(-_lerpSpeed * dtSec);
+    _animatedHeading = (_animatedHeading + diff * t + 360) % 360;
+    setState(() {});
   }
 
   Future<void> _bootstrap() async {
@@ -77,10 +128,7 @@ class _CompassScreenState extends State<CompassScreen> {
       (event) {
         final raw = event.heading;
         if (raw == null) return;
-        final smoothed = _smoother.smooth(raw);
-        if (mounted) {
-          setState(() => _heading = smoothed);
-        }
+        _heading = _smoother.smooth(raw);
       },
       onError: (_) {
         if (mounted) setState(() => _streamMissing = true);
@@ -115,6 +163,7 @@ class _CompassScreenState extends State<CompassScreen> {
 
   @override
   void dispose() {
+    _ticker.dispose();
     _subscription?.cancel();
     super.dispose();
   }
@@ -127,6 +176,8 @@ class _CompassScreenState extends State<CompassScreen> {
       _heading = null;
       _declination = null;
       _waitingForGps = true;
+      _hasAnimTarget = false;
+      _lastTick = Duration.zero;
     });
     _subscription?.cancel();
     _subscription = null;
@@ -196,7 +247,7 @@ class _CompassScreenState extends State<CompassScreen> {
       );
     }
 
-    final heading = _displayHeading;
+    final heading = _hasAnimTarget ? _animatedHeading : null;
     final textTheme = Theme.of(context).textTheme;
     final northLabel = _isTrueNorth ? 'True north' : 'Magnetic north';
 
