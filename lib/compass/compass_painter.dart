@@ -1,9 +1,7 @@
 import 'dart:math' as math;
-import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
-/// Compass with rotating card (degrees + cardinals) and a fixed red arrow toward north.
 class CompassPainter extends CustomPainter {
   CompassPainter({
     required this.headingDegrees,
@@ -11,305 +9,236 @@ class CompassPainter extends CustomPainter {
     required this.colorScheme,
   });
 
-  /// Device heading in degrees (0 = top of phone toward north, clockwise). Drives dial rotation and north arrow.
   final double headingDegrees;
   final bool hasHeading;
   final ColorScheme colorScheme;
 
-  static const double _degToRad = math.pi / 180;
+  static const double _deg2rad = math.pi / 180;
 
   @override
   void paint(Canvas canvas, Size size) {
     final shortest = math.min(size.width, size.height);
     final center = Offset(size.width / 2, size.height / 2);
 
-    final baseW = shortest * 0.88;
-    final baseH = shortest * 0.98;
-    final housingR = shortest * 0.34;
-    final bezelOuterR = housingR * 1.22;
-
-    final baseplateRect = RRect.fromRectAndRadius(
-      Rect.fromCenter(
-        center: center,
-        width: baseW,
-        height: baseH,
-      ),
-      Radius.circular(shortest * 0.04),
-    );
-
-    final baseFill = Paint()
-      ..color = colorScheme.surfaceContainerHighest.withValues(alpha: 0.85)
-      ..style = PaintingStyle.fill;
-    final baseStroke = Paint()
-      ..color = colorScheme.outline.withValues(alpha: 0.5)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = shortest * 0.006;
-
-    canvas.drawRRect(baseplateRect, baseFill);
-    canvas.drawRRect(baseplateRect, baseStroke);
-
-    _drawDirectionOfTravelArrow(canvas, center, baseH, shortest);
+    final outerR = shortest * 0.44;
+    final innerR = shortest * 0.34;
+    final labelR = shortest * 0.365;
+    final tickOuterR = outerR - shortest * 0.005;
 
     final H = hasHeading ? headingDegrees : 0.0;
-    // Rotating card: N on dial stays on geographic north. If dial and arrow drift together
-    // on your device, flip the sign (use +H * _degToRad instead).
-    final dialRotationRad = -H * _degToRad;
+    final dialRad = -H * _deg2rad;
 
+    // --- Rotating group (card) ---
     canvas.save();
     canvas.translate(center.dx, center.dy);
-    canvas.rotate(dialRotationRad);
+    canvas.rotate(dialRad);
     canvas.translate(-center.dx, -center.dy);
 
-    _drawHousingDisc(canvas, center, housingR, shortest);
-    _drawBezel(canvas, center, housingR, bezelOuterR, shortest);
-    _drawOrientingLines(canvas, center, housingR, shortest);
-    _drawOrientingArrow(canvas, center, housingR, shortest);
+    _drawInnerDisc(canvas, center, innerR, shortest);
+    _drawTicks(canvas, center, innerR, tickOuterR, shortest);
+    _drawRadialLabels(canvas, center, labelR, shortest);
 
     canvas.restore();
 
-    final innerRim = Paint()
-      ..color = colorScheme.outline
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = shortest * 0.008;
-    canvas.drawCircle(center, housingR, innerRim);
-
-    final outerRim = Paint()
-      ..color = colorScheme.outline
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = shortest * 0.005;
-    canvas.drawCircle(center, bezelOuterR, outerRim);
-
-    _drawIndexLine(canvas, center, bezelOuterR, shortest);
+    // --- Fixed overlays ---
+    _drawOuterRim(canvas, center, outerR, shortest);
+    _drawIndexMark(canvas, center, outerR, shortest);
 
     if (hasHeading) {
-      _drawFixedNorthArrow(canvas, center, housingR, shortest, H);
+      _drawNorthArrow(canvas, center, innerR, shortest, H);
     }
   }
 
-  void _drawHousingDisc(
+  // ─── Inner disc ──────────────────────────────────────────────
+
+  void _drawInnerDisc(
     Canvas canvas,
     Offset center,
-    double housingR,
+    double r,
     double shortest,
   ) {
-    final housingFill = Paint()
-      ..shader = ui.Gradient.radial(
-        center,
-        housingR,
-        [
-          colorScheme.surfaceContainerLow,
-          colorScheme.surfaceContainerHigh,
-        ],
-      );
-    canvas.drawCircle(center, housingR, housingFill);
-  }
-
-  void _drawDirectionOfTravelArrow(
-    Canvas canvas,
-    Offset center,
-    double baseH,
-    double shortest,
-  ) {
-    final tipY = center.dy - baseH * 0.46;
-    final tailY = center.dy - baseH * 0.12;
-    final halfW = shortest * 0.07;
-
-    final path = Path()
-      ..moveTo(center.dx, tipY)
-      ..lineTo(center.dx + halfW, tailY)
-      ..lineTo(center.dx - halfW, tailY)
-      ..close();
-
-    final fill = Paint()
-      ..color = colorScheme.primary
-      ..style = PaintingStyle.fill;
-    final stroke = Paint()
-      ..color = colorScheme.onPrimary.withValues(alpha: 0.35)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = shortest * 0.004;
-
-    canvas.drawPath(path, fill);
-    canvas.drawPath(path, stroke);
-
-    final stem = RRect.fromRectAndRadius(
-      Rect.fromCenter(
-        center: Offset(center.dx, tailY + shortest * 0.04),
-        width: shortest * 0.05,
-        height: shortest * 0.08,
-      ),
-      Radius.circular(shortest * 0.012),
+    canvas.drawCircle(
+      center,
+      r,
+      Paint()..color = colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
     );
-    canvas.drawRRect(stem, fill);
+    canvas.drawCircle(
+      center,
+      r,
+      Paint()
+        ..color = colorScheme.outlineVariant.withValues(alpha: 0.4)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = shortest * 0.003,
+    );
   }
 
-  void _drawBezel(
+  // ─── Tick marks ──────────────────────────────────────────────
+
+  void _drawTicks(
     Canvas canvas,
     Offset center,
-    double housingR,
+    double innerR,
     double outerR,
     double shortest,
   ) {
-    final tickPaint = Paint()
-      ..color = colorScheme.onSurface.withValues(alpha: 0.75)
-      ..strokeWidth = shortest * 0.004
-      ..strokeCap = StrokeCap.round;
+    for (var deg = 0; deg < 360; deg += 2) {
+      final isMajor = deg % 30 == 0;
+      final isMedium = deg % 10 == 0;
 
-    final labelStyle = TextStyle(
-      color: colorScheme.onSurface.withValues(alpha: 0.85),
-      fontSize: shortest * 0.055,
-      fontWeight: FontWeight.w600,
+      double tickInner;
+      double alpha;
+      double width;
+      if (isMajor) {
+        tickInner = outerR - shortest * 0.040;
+        alpha = 0.85;
+        width = shortest * 0.005;
+      } else if (isMedium) {
+        tickInner = outerR - shortest * 0.025;
+        alpha = 0.55;
+        width = shortest * 0.003;
+      } else {
+        tickInner = outerR - shortest * 0.013;
+        alpha = 0.25;
+        width = shortest * 0.002;
+      }
+
+      final rad = -math.pi / 2 + deg * _deg2rad;
+      final c = math.cos(rad);
+      final s = math.sin(rad);
+
+      canvas.drawLine(
+        Offset(center.dx + c * tickInner, center.dy + s * tickInner),
+        Offset(center.dx + c * outerR, center.dy + s * outerR),
+        Paint()
+          ..color = colorScheme.onSurface.withValues(alpha: alpha)
+          ..strokeWidth = width
+          ..strokeCap = StrokeCap.round,
+      );
+    }
+  }
+
+  // ─── Radially-rotated labels ─────────────────────────────────
+
+  void _drawRadialLabels(
+    Canvas canvas,
+    Offset center,
+    double labelR,
+    double shortest,
+  ) {
+    final degStyle = TextStyle(
+      color: colorScheme.onSurface.withValues(alpha: 0.78),
+      fontSize: shortest * 0.042,
+      fontWeight: FontWeight.w500,
+      letterSpacing: 0,
     );
 
-    // Clockwise-from-north on screen: up = N, right = E (+y is down).
-    for (var deg = 0; deg < 360; deg += 10) {
-      final rad = -math.pi / 2 + deg * _degToRad;
-      final isMajor = deg % 30 == 0;
-      final inner = outerR - (isMajor ? shortest * 0.04 : shortest * 0.022);
-      final outer = outerR - shortest * 0.006;
-      final c = math.cos(rad);
-      final s = math.sin(rad);
-      canvas.drawLine(
-        Offset(center.dx + c * inner, center.dy + s * inner),
-        Offset(center.dx + c * outer, center.dy + s * outer),
-        tickPaint,
-      );
+    final cardinalStyle = TextStyle(
+      color: colorScheme.onSurface.withValues(alpha: 0.92),
+      fontSize: shortest * 0.062,
+      fontWeight: FontWeight.w700,
+      letterSpacing: 0.5,
+    );
 
-      if (isMajor && deg % 90 != 0) {
-        final labelR = outerR - shortest * 0.11;
-        final tp = TextPainter(
-          text: TextSpan(text: '$deg', style: labelStyle),
-          textDirection: TextDirection.ltr,
-        )..layout();
-        tp.paint(
-          canvas,
-          Offset(
-            center.dx + c * labelR - tp.width / 2,
-            center.dy + s * labelR - tp.height / 2,
-          ),
-        );
+    const cardinals = {0: 'N', 90: 'E', 180: 'S', 270: 'W'};
+
+    for (var deg = 0; deg < 360; deg += 30) {
+      final isCardinal = cardinals.containsKey(deg);
+      final text = isCardinal ? cardinals[deg]! : '$deg';
+      var style = isCardinal ? cardinalStyle : degStyle;
+      if (deg == 0) {
+        style = style.copyWith(color: Colors.red.shade600);
       }
-    }
 
-    for (final label in _cardinalLabels()) {
-      final rad = -math.pi / 2 + label.degrees * _degToRad;
-      final c = math.cos(rad);
-      final s = math.sin(rad);
-      final labelR = outerR - shortest * 0.13;
       final tp = TextPainter(
-        text: TextSpan(
-          text: label.text,
-          style: labelStyle.copyWith(
-            fontSize: shortest * 0.07,
-            color: label.color ?? labelStyle.color,
-          ),
-        ),
+        text: TextSpan(text: text, style: style),
         textDirection: TextDirection.ltr,
       )..layout();
-      tp.paint(
-        canvas,
-        Offset(
-          center.dx + c * labelR - tp.width / 2,
-          center.dy + s * labelR - tp.height / 2,
-        ),
-      );
+
+      final theta = deg * _deg2rad;
+      final inBottomHalf = deg > 90 && deg < 270;
+
+      canvas.save();
+      canvas.translate(center.dx, center.dy);
+      canvas.rotate(theta);
+
+      if (inBottomHalf) {
+        canvas.rotate(math.pi);
+        tp.paint(canvas, Offset(-tp.width / 2, labelR - tp.height));
+      } else {
+        tp.paint(canvas, Offset(-tp.width / 2, -labelR - tp.height));
+      }
+      canvas.restore();
     }
   }
 
-  List<({String text, double degrees, Color? color})> _cardinalLabels() {
-    return [
-      (text: 'N', degrees: 0, color: Colors.red.shade700),
-      (text: 'E', degrees: 90, color: null),
-      (text: 'S', degrees: 180, color: null),
-      (text: 'W', degrees: 270, color: null),
-    ];
+  // ─── Fixed outer rim ─────────────────────────────────────────
+
+  void _drawOuterRim(
+    Canvas canvas,
+    Offset center,
+    double r,
+    double shortest,
+  ) {
+    canvas.drawCircle(
+      center,
+      r,
+      Paint()
+        ..color = colorScheme.outlineVariant.withValues(alpha: 0.5)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = shortest * 0.004,
+    );
   }
 
-  void _drawIndexLine(
+  // ─── Index mark (12 o'clock) ─────────────────────────────────
+
+  void _drawIndexMark(
     Canvas canvas,
     Offset center,
     double outerR,
     double shortest,
   ) {
-    final top = Offset(center.dx, center.dy - outerR - shortest * 0.02);
-    final path = Path()
-      ..moveTo(top.dx - shortest * 0.04, top.dy + shortest * 0.02)
-      ..lineTo(top.dx, top.dy - shortest * 0.02)
-      ..lineTo(top.dx + shortest * 0.04, top.dy + shortest * 0.02);
-
-    final paint = Paint()
-      ..color = colorScheme.onSurface
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = shortest * 0.006
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-    canvas.drawPath(path, paint);
-  }
-
-  void _drawOrientingLines(
-    Canvas canvas,
-    Offset center,
-    double housingR,
-    double shortest,
-  ) {
-    final paint = Paint()
-      ..color = colorScheme.outline.withValues(alpha: 0.45)
-      ..strokeWidth = shortest * 0.003
-      ..style = PaintingStyle.stroke;
-
-    final gap = housingR * 0.14;
-    final top = center.dy - housingR * 0.72;
-    final bottom = center.dy + housingR * 0.55;
-    canvas.drawLine(Offset(center.dx - gap, top), Offset(center.dx - gap, bottom), paint);
-    canvas.drawLine(Offset(center.dx + gap, top), Offset(center.dx + gap, bottom), paint);
-  }
-
-  void _drawOrientingArrow(
-    Canvas canvas,
-    Offset center,
-    double housingR,
-    double shortest,
-  ) {
-    final tipY = center.dy + housingR * 0.38;
-    final shoulderY = center.dy + housingR * 0.12;
-    final halfW = housingR * 0.22;
+    final tipY = center.dy - outerR - shortest * 0.012;
+    final baseY = center.dy - outerR + shortest * 0.022;
+    final halfW = shortest * 0.024;
 
     final path = Path()
       ..moveTo(center.dx, tipY)
-      ..lineTo(center.dx + halfW, shoulderY)
-      ..lineTo(center.dx + halfW * 0.35, shoulderY)
-      ..lineTo(center.dx + halfW * 0.35, center.dy - housingR * 0.08)
-      ..lineTo(center.dx - halfW * 0.35, center.dy - housingR * 0.08)
-      ..lineTo(center.dx - halfW * 0.35, shoulderY)
-      ..lineTo(center.dx - halfW, shoulderY)
+      ..lineTo(center.dx - halfW, baseY)
+      ..lineTo(center.dx + halfW, baseY)
       ..close();
 
-    final stroke = Paint()
-      ..color = Colors.red.shade700
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = shortest * 0.005;
-    canvas.drawPath(path, stroke);
+    canvas.drawPath(path, Paint()..color = colorScheme.primary);
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = colorScheme.outline.withValues(alpha: 0.3)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = shortest * 0.002,
+    );
   }
 
-  /// Fixed in screen space: points toward north on the glass (angle from +x, clockwise).
-  void _drawFixedNorthArrow(
+  // ─── Fixed north arrow ───────────────────────────────────────
+
+  void _drawNorthArrow(
     Canvas canvas,
     Offset center,
-    double housingR,
+    double innerR,
     double shortest,
     double headingDeg,
   ) {
-    final northAngle = -math.pi / 2 - headingDeg * _degToRad;
-    final tipLen = housingR * 0.82;
+    final northAngle = -math.pi / 2 - headingDeg * _deg2rad;
+    final tipLen = innerR * 0.88;
+    final baseLen = shortest * 0.025;
+    final halfW = shortest * 0.032;
+
     final tip = Offset(
       center.dx + tipLen * math.cos(northAngle),
       center.dy + tipLen * math.sin(northAngle),
     );
     final perp = northAngle + math.pi / 2;
-    final halfW = shortest * 0.038;
-    final baseMidDist = shortest * 0.02;
     final baseMid = Offset(
-      center.dx - baseMidDist * math.cos(northAngle),
-      center.dy - baseMidDist * math.sin(northAngle),
+      center.dx - baseLen * math.cos(northAngle),
+      center.dy - baseLen * math.sin(northAngle),
     );
     final b1 = Offset(
       baseMid.dx + halfW * math.cos(perp),
@@ -320,27 +249,57 @@ class CompassPainter extends CustomPainter {
       baseMid.dy - halfW * math.sin(perp),
     );
 
-    final path = Path()
+    final northPath = Path()
       ..moveTo(tip.dx, tip.dy)
-      ..lineTo(b2.dx, b2.dy)
       ..lineTo(b1.dx, b1.dy)
+      ..lineTo(b2.dx, b2.dy)
       ..close();
 
-    final fill = Paint()..color = Colors.red.shade700;
-    final outline = Paint()
-      ..color = colorScheme.onSurface.withValues(alpha: 0.25)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = shortest * 0.003;
+    canvas.drawPath(northPath, Paint()..color = Colors.red.shade600);
+    canvas.drawPath(
+      northPath,
+      Paint()
+        ..color = colorScheme.onSurface.withValues(alpha: 0.2)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = shortest * 0.003,
+    );
 
-    canvas.drawPath(path, fill);
-    canvas.drawPath(path, outline);
+    // South half (opposite direction)
+    final southAngle = northAngle + math.pi;
+    final southTipLen = innerR * 0.52;
+    final southTip = Offset(
+      center.dx + southTipLen * math.cos(southAngle),
+      center.dy + southTipLen * math.sin(southAngle),
+    );
+    final southPath = Path()
+      ..moveTo(southTip.dx, southTip.dy)
+      ..lineTo(b1.dx, b1.dy)
+      ..lineTo(b2.dx, b2.dy)
+      ..close();
 
-    canvas.drawCircle(center, shortest * 0.024, Paint()..color = colorScheme.surface);
+    canvas.drawPath(
+      southPath,
+      Paint()..color = colorScheme.onSurface.withValues(alpha: 0.2),
+    );
+    canvas.drawPath(
+      southPath,
+      Paint()
+        ..color = colorScheme.onSurface.withValues(alpha: 0.15)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = shortest * 0.002,
+    );
+
+    // Pivot dot
     canvas.drawCircle(
       center,
-      shortest * 0.024,
+      shortest * 0.02,
+      Paint()..color = colorScheme.surface,
+    );
+    canvas.drawCircle(
+      center,
+      shortest * 0.02,
       Paint()
-        ..color = colorScheme.outline
+        ..color = colorScheme.outline.withValues(alpha: 0.4)
         ..style = PaintingStyle.stroke
         ..strokeWidth = shortest * 0.003,
     );

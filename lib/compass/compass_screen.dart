@@ -150,70 +150,86 @@ class _CompassScreenState extends State<CompassScreen> {
 
     final heading = _heading;
 
+    final textTheme = Theme.of(context).textTheme;
+
     return Scaffold(
       key: const ValueKey<String>('compass_screen'),
       backgroundColor: scheme.surface,
       body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return Stack(
-              fit: StackFit.expand,
-              children: [
-                CustomPaint(
-                  size: Size(constraints.maxWidth, constraints.maxHeight),
-                  painter: CompassPainter(
-                    headingDegrees: heading ?? 0,
-                    hasHeading: heading != null,
-                    colorScheme: scheme,
-                  ),
-                ),
-                if (heading == null)
-                  Center(
-                    child: Card(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 12,
+        child: Column(
+          children: [
+            const SizedBox(height: 20),
+            // Heading readout
+            Text(
+              heading != null
+                  ? '${heading.round()}° ${_headingToCompass8(heading)}'
+                  : '—',
+              style: textTheme.headlineLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: scheme.onSurface,
+                letterSpacing: 0.5,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              'Magnetic north',
+              style: textTheme.bodySmall?.copyWith(
+                color: scheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 12),
+            // Compass dial
+            Expanded(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      CustomPaint(
+                        size: Size(
+                          constraints.maxWidth,
+                          constraints.maxHeight,
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: scheme.primary,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Text(
-                              'Waiting for heading…',
-                              style: Theme.of(context).textTheme.bodyMedium,
-                            ),
-                          ],
+                        painter: CompassPainter(
+                          headingDegrees: heading ?? 0,
+                          hasHeading: heading != null,
+                          colorScheme: scheme,
                         ),
                       ),
-                    ),
-                  ),
-                Positioned(
-                  left: 12,
-                  right: 12,
-                  bottom: 16,
-                  child: Text(
-                    heading != null
-                        ? '${heading.round()}° ${_headingToCompass8(heading)} · Magnetic north'
-                        : ' ',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: scheme.onSurface.withValues(alpha: 0.85),
-                          fontWeight: FontWeight.w600,
+                      if (heading == null)
+                        Card(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 12,
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: scheme.primary,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  'Waiting for heading…',
+                                  style: textTheme.bodyMedium,
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
-                  ),
-                ),
-              ],
-            );
-          },
+                    ],
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
         ),
       ),
     );
