@@ -28,6 +28,7 @@ class CompassScreen extends StatefulWidget {
 
 class _CompassScreenState extends State<CompassScreen>
     with SingleTickerProviderStateMixin {
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
   StreamSubscription<CompassEvent>? _subscription;
   final HeadingSmoother _smoother = HeadingSmoother();
   static final GeoMag _geoMag = GeoMag();
@@ -252,12 +253,43 @@ class _CompassScreenState extends State<CompassScreen>
     final northLabel = _isTrueNorth ? 'True north' : 'Magnetic north';
 
     return Scaffold(
-      key: const ValueKey<String>('compass_screen'),
+      key: _scaffoldKey,
       backgroundColor: scheme.surface,
+      appBar: AppBar(
+        title: const Text('Pocket Compass'),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.info_outline),
+            tooltip: 'Settings',
+            onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
+          ),
+        ],
+      ),
+      endDrawer: NavigationDrawer(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
+            child: Text(
+              'Settings',
+              style: textTheme.titleMedium?.copyWith(
+                color: scheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          const Divider(indent: 24, endIndent: 24),
+          ListTile(
+            leading: const Icon(Icons.info_outline),
+            title: const Text('Version'),
+            subtitle: const Text('1.0.0'),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Column(
           children: [
-            const SizedBox(height: 20),
+            const SizedBox(height: 12),
             Text(
               heading != null
                   ? '${heading.round()}° ${_headingToCompass8(heading)}'
