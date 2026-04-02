@@ -1,0 +1,15 @@
+---
+description: Use Conventional Commits when staging, committing, or pushing for this repo. Applies to git workflows and requests to save or publish changes.
+alwaysApply: true
+---
+
+# Conventional commits and push
+
+- Before committing: run `git status` and review `git diff`; stage only what belongs in one logical commit (`git add` / `git add -p`).
+- Message format: `type(optional-scope): subject` — imperative mood, no trailing period, subject ~72 chars max.
+- Allowed **types**: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`.
+- Optional **body** (why/what) and **footers**: `BREAKING CHANGE: …`, `Closes #…`.
+- **Push**: `git push`, or `git push -u origin <branch>` for a new upstream branch. Do not force-push unless the user explicitly asks; if they do, prefer `--force-with-lease`.
+- Do not commit secrets, credentials, or files that should stay gitignored.
+
+Full checklist and examples: [.cursor/skills/git-conventional-commits/SKILL.md](.cursor/skills/git-conventional-commits/SKILL.md).
