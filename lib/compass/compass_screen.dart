@@ -137,7 +137,7 @@ class _CompassScreenState extends State<CompassScreen> {
                 Icon(Icons.sensors_off, size: 48, color: scheme.primary),
                 const SizedBox(height: 16),
                 Text(
-                  'Compass sensor is not available. Try a physical Android device.',
+                  'Compass sensor is not available. Try a physical iPhone or Android device.',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyLarge,
                 ),
@@ -197,16 +197,17 @@ class _CompassScreenState extends State<CompassScreen> {
                     ),
                   ),
                 Positioned(
-                  left: 0,
-                  right: 0,
+                  left: 12,
+                  right: 12,
                   bottom: 16,
                   child: Text(
                     heading != null
-                        ? '${heading.round()}° ${_headingToCompass8(heading)}'
+                        ? '${heading.round()}° ${_headingToCompass8(heading)} · Magnetic north'
                         : ' ',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: scheme.onSurface.withValues(alpha: 0.8),
+                          color: scheme.onSurface.withValues(alpha: 0.85),
+                          fontWeight: FontWeight.w600,
                         ),
                   ),
                 ),

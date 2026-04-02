@@ -3,7 +3,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
-/// Baseplate-style compass: housing, bezel, orienting marks, DOT arrow, needle.
+/// Compass with rotating card (degrees + cardinals) and a fixed red arrow toward north.
 class CompassPainter extends CustomPainter {
   CompassPainter({
     required this.headingDegrees,
@@ -11,7 +11,7 @@ class CompassPainter extends CustomPainter {
     required this.colorScheme,
   });
 
-  /// Smoothed magnetic heading, 0 = north, clockwise. Ignored if [hasHeading] is false.
+  /// Device heading in degrees (0 = top of phone toward north, clockwise). Drives dial rotation and north arrow.
   final double headingDegrees;
   final bool hasHeading;
   final ColorScheme colorScheme;
@@ -50,6 +50,48 @@ class CompassPainter extends CustomPainter {
 
     _drawDirectionOfTravelArrow(canvas, center, baseH, shortest);
 
+    final H = hasHeading ? headingDegrees : 0.0;
+    // Rotating card: N on dial stays on geographic north. If dial and arrow drift together
+    // on your device, flip the sign (use +H * _degToRad instead).
+    final dialRotationRad = -H * _degToRad;
+
+    canvas.save();
+    canvas.translate(center.dx, center.dy);
+    canvas.rotate(dialRotationRad);
+    canvas.translate(-center.dx, -center.dy);
+
+    _drawHousingDisc(canvas, center, housingR, shortest);
+    _drawBezel(canvas, center, housingR, bezelOuterR, shortest);
+    _drawOrientingLines(canvas, center, housingR, shortest);
+    _drawOrientingArrow(canvas, center, housingR, shortest);
+
+    canvas.restore();
+
+    final innerRim = Paint()
+      ..color = colorScheme.outline
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = shortest * 0.008;
+    canvas.drawCircle(center, housingR, innerRim);
+
+    final outerRim = Paint()
+      ..color = colorScheme.outline
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = shortest * 0.005;
+    canvas.drawCircle(center, bezelOuterR, outerRim);
+
+    _drawIndexLine(canvas, center, bezelOuterR, shortest);
+
+    if (hasHeading) {
+      _drawFixedNorthArrow(canvas, center, housingR, shortest, H);
+    }
+  }
+
+  void _drawHousingDisc(
+    Canvas canvas,
+    Offset center,
+    double housingR,
+    double shortest,
+  ) {
     final housingFill = Paint()
       ..shader = ui.Gradient.radial(
         center,
@@ -59,22 +101,7 @@ class CompassPainter extends CustomPainter {
           colorScheme.surfaceContainerHigh,
         ],
       );
-    final housingBorder = Paint()
-      ..color = colorScheme.outline
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = shortest * 0.008;
-
     canvas.drawCircle(center, housingR, housingFill);
-    canvas.drawCircle(center, housingR, housingBorder);
-
-    _drawBezel(canvas, center, housingR, bezelOuterR, shortest);
-    _drawIndexLine(canvas, center, bezelOuterR, shortest);
-    _drawOrientingLines(canvas, center, housingR, shortest);
-    _drawOrientingArrow(canvas, center, housingR, shortest);
-
-    if (hasHeading) {
-      _drawNeedle(canvas, center, housingR, shortest);
-    }
   }
 
   void _drawDirectionOfTravelArrow(
@@ -262,57 +289,60 @@ class CompassPainter extends CustomPainter {
     canvas.drawPath(path, stroke);
   }
 
-  void _drawNeedle(
+  /// Fixed in screen space: points toward north on the glass (angle from +x, clockwise).
+  void _drawFixedNorthArrow(
     Canvas canvas,
     Offset center,
     double housingR,
     double shortest,
+    double headingDeg,
   ) {
-    final rotation = (360 - headingDegrees) * _degToRad;
+    final northAngle = -math.pi / 2 - headingDeg * _degToRad;
+    final tipLen = housingR * 0.82;
+    final tip = Offset(
+      center.dx + tipLen * math.cos(northAngle),
+      center.dy + tipLen * math.sin(northAngle),
+    );
+    final perp = northAngle + math.pi / 2;
+    final halfW = shortest * 0.038;
+    final baseMidDist = shortest * 0.02;
+    final baseMid = Offset(
+      center.dx - baseMidDist * math.cos(northAngle),
+      center.dy - baseMidDist * math.sin(northAngle),
+    );
+    final b1 = Offset(
+      baseMid.dx + halfW * math.cos(perp),
+      baseMid.dy + halfW * math.sin(perp),
+    );
+    final b2 = Offset(
+      baseMid.dx - halfW * math.cos(perp),
+      baseMid.dy - halfW * math.sin(perp),
+    );
 
-    canvas.save();
-    canvas.translate(center.dx, center.dy);
-    canvas.rotate(rotation);
-
-    final northLen = housingR * 0.72;
-    final southLen = housingR * 0.52;
-    final w = shortest * 0.028;
-
-    final northPath = Path()
-      ..moveTo(-w, 0)
-      ..lineTo(0, -northLen)
-      ..lineTo(w, 0)
+    final path = Path()
+      ..moveTo(tip.dx, tip.dy)
+      ..lineTo(b2.dx, b2.dy)
+      ..lineTo(b1.dx, b1.dy)
       ..close();
 
-    final southPath = Path()
-      ..moveTo(-w * 0.85, 0)
-      ..lineTo(0, southLen)
-      ..lineTo(w * 0.85, 0)
-      ..close();
-
-    final northPaint = Paint()..color = Colors.red.shade700;
-    final southPaint = Paint()..color = Colors.grey.shade200;
+    final fill = Paint()..color = Colors.red.shade700;
     final outline = Paint()
-      ..color = colorScheme.onSurface.withValues(alpha: 0.35)
+      ..color = colorScheme.onSurface.withValues(alpha: 0.25)
       ..style = PaintingStyle.stroke
       ..strokeWidth = shortest * 0.003;
 
-    canvas.drawPath(northPath, northPaint);
-    canvas.drawPath(southPath, southPaint);
-    canvas.drawPath(northPath, outline);
-    canvas.drawPath(southPath, outline);
+    canvas.drawPath(path, fill);
+    canvas.drawPath(path, outline);
 
-    canvas.drawCircle(Offset.zero, shortest * 0.022, Paint()..color = colorScheme.surface);
+    canvas.drawCircle(center, shortest * 0.024, Paint()..color = colorScheme.surface);
     canvas.drawCircle(
-      Offset.zero,
-      shortest * 0.022,
+      center,
+      shortest * 0.024,
       Paint()
         ..color = colorScheme.outline
         ..style = PaintingStyle.stroke
         ..strokeWidth = shortest * 0.003,
     );
-
-    canvas.restore();
   }
 
   @override
