@@ -294,6 +294,18 @@ class _CompassScreenState extends State<CompassScreen>
             subtitle: Text(_appVersion.isEmpty ? '…' : _appVersion),
             contentPadding: const EdgeInsets.symmetric(horizontal: 24),
           ),
+          ListTile(
+            leading: const Icon(Icons.person_outline),
+            title: const Text('Author'),
+            subtitle: const Text('Cuong Nguyen'),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+          ),
+          ListTile(
+            leading: const Icon(Icons.mail_outline),
+            title: const Text('Email'),
+            subtitle: const Text('c.ng.devie@gmail.com'),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+          ),
         ],
       ),
       body: SafeArea(
