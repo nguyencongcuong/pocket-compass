@@ -160,8 +160,9 @@ class CompassPainter extends CustomPainter {
       fontWeight: FontWeight.w600,
     );
 
+    // Clockwise-from-north on screen: up = N, right = E (+y is down).
     for (var deg = 0; deg < 360; deg += 10) {
-      final rad = -math.pi / 2 - deg * _degToRad;
+      final rad = -math.pi / 2 + deg * _degToRad;
       final isMajor = deg % 30 == 0;
       final inner = outerR - (isMajor ? shortest * 0.04 : shortest * 0.022);
       final outer = outerR - shortest * 0.006;
@@ -190,7 +191,7 @@ class CompassPainter extends CustomPainter {
     }
 
     for (final label in _cardinalLabels()) {
-      final rad = -math.pi / 2 - label.degrees * _degToRad;
+      final rad = -math.pi / 2 + label.degrees * _degToRad;
       final c = math.cos(rad);
       final s = math.sin(rad);
       final labelR = outerR - shortest * 0.13;
