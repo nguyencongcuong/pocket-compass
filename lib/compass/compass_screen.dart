@@ -6,6 +6,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter_compass/flutter_compass.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geomag/geomag.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import 'compass_painter.dart';
@@ -40,6 +41,7 @@ class _CompassScreenState extends State<CompassScreen>
   double? _heading;
   double? _declination;
   bool _waitingForGps = true;
+  String _appVersion = '';
 
   // --- Animation state ---
   late final Ticker _ticker;
@@ -64,6 +66,7 @@ class _CompassScreenState extends State<CompassScreen>
   void initState() {
     super.initState();
     _ticker = createTicker(_onTick)..start();
+    _loadVersion();
     _bootstrap();
   }
 
@@ -103,6 +106,13 @@ class _CompassScreenState extends State<CompassScreen>
     final t = 1.0 - math.exp(-_lerpSpeed * dtSec);
     _animatedHeading = (_animatedHeading + diff * t + 360) % 360;
     setState(() {});
+  }
+
+  Future<void> _loadVersion() async {
+    final info = await PackageInfo.fromPlatform();
+    if (mounted) {
+      setState(() => _appVersion = '${info.version}+${info.buildNumber}');
+    }
   }
 
   Future<void> _bootstrap() async {
@@ -281,7 +291,7 @@ class _CompassScreenState extends State<CompassScreen>
           ListTile(
             leading: const Icon(Icons.info_outline),
             title: const Text('Version'),
-            subtitle: const Text('1.0.0'),
+            subtitle: Text(_appVersion.isEmpty ? '…' : _appVersion),
             contentPadding: const EdgeInsets.symmetric(horizontal: 24),
           ),
         ],
