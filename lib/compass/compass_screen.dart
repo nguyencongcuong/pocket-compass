@@ -306,6 +306,12 @@ class _CompassScreenState extends State<CompassScreen>
             subtitle: const Text('c.ng.devie@gmail.com'),
             contentPadding: const EdgeInsets.symmetric(horizontal: 24),
           ),
+          ListTile(
+            leading: const Icon(Icons.language_outlined),
+            title: const Text('Language'),
+            subtitle: const Text('English'),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+          ),
         ],
       ),
       body: SafeArea(
