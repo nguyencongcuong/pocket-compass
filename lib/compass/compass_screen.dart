@@ -289,12 +289,6 @@ class _CompassScreenState extends State<CompassScreen>
           ),
           const Divider(indent: 24, endIndent: 24),
           ListTile(
-            leading: const Icon(Icons.info_outline),
-            title: const Text('Version'),
-            subtitle: Text(_appVersion.isEmpty ? '…' : _appVersion),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 24),
-          ),
-          ListTile(
             leading: const Icon(Icons.person_outline),
             title: const Text('Author'),
             subtitle: const Text('Cuong Nguyen'),
@@ -310,6 +304,12 @@ class _CompassScreenState extends State<CompassScreen>
             leading: const Icon(Icons.language_outlined),
             title: const Text('Language'),
             subtitle: const Text('English'),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+          ),
+          ListTile(
+            leading: const Icon(Icons.info_outline),
+            title: const Text('Version'),
+            subtitle: Text(_appVersion.isEmpty ? '…' : _appVersion),
             contentPadding: const EdgeInsets.symmetric(horizontal: 24),
           ),
         ],
