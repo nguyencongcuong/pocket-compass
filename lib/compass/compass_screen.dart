@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_compass/flutter_compass.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:geomag/geomag.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import 'compass_painter.dart';
@@ -25,11 +27,25 @@ class CompassScreen extends StatefulWidget {
 class _CompassScreenState extends State<CompassScreen> {
   StreamSubscription<CompassEvent>? _subscription;
   final HeadingSmoother _smoother = HeadingSmoother();
+  static final GeoMag _geoMag = GeoMag();
 
   bool _permissionGranted = false;
   bool _permissionChecked = false;
   bool _streamMissing = false;
   double? _heading;
+  double? _declination;
+  bool _waitingForGps = true;
+
+  /// Effective heading: true north when declination is known, magnetic otherwise.
+  double? get _displayHeading {
+    final h = _heading;
+    if (h == null) return null;
+    final dec = _declination;
+    if (dec == null) return h;
+    return (h + dec + 360) % 360;
+  }
+
+  bool get _isTrueNorth => _declination != null;
 
   @override
   void initState() {
@@ -46,6 +62,11 @@ class _CompassScreenState extends State<CompassScreen> {
     });
     if (!status.isGranted) return;
 
+    _startCompass();
+    _fetchDeclination();
+  }
+
+  void _startCompass() {
     final stream = FlutterCompass.events;
     if (stream == null) {
       setState(() => _streamMissing = true);
@@ -67,6 +88,31 @@ class _CompassScreenState extends State<CompassScreen> {
     );
   }
 
+  Future<void> _fetchDeclination() async {
+    try {
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.medium,
+          timeLimit: Duration(seconds: 15),
+        ),
+      );
+      if (!mounted) return;
+
+      final result = _geoMag.calculate(
+        position.latitude,
+        position.longitude,
+      );
+      setState(() {
+        _declination = result.dec;
+        _waitingForGps = false;
+      });
+    } catch (_) {
+      if (mounted) {
+        setState(() => _waitingForGps = false);
+      }
+    }
+  }
+
   @override
   void dispose() {
     _subscription?.cancel();
@@ -79,6 +125,8 @@ class _CompassScreenState extends State<CompassScreen> {
       _permissionGranted = false;
       _streamMissing = false;
       _heading = null;
+      _declination = null;
+      _waitingForGps = true;
     });
     _subscription?.cancel();
     _subscription = null;
@@ -148,9 +196,9 @@ class _CompassScreenState extends State<CompassScreen> {
       );
     }
 
-    final heading = _heading;
-
+    final heading = _displayHeading;
     final textTheme = Theme.of(context).textTheme;
+    final northLabel = _isTrueNorth ? 'True north' : 'Magnetic north';
 
     return Scaffold(
       key: const ValueKey<String>('compass_screen'),
@@ -159,7 +207,6 @@ class _CompassScreenState extends State<CompassScreen> {
         child: Column(
           children: [
             const SizedBox(height: 20),
-            // Heading readout
             Text(
               heading != null
                   ? '${heading.round()}° ${_headingToCompass8(heading)}'
@@ -171,14 +218,29 @@ class _CompassScreenState extends State<CompassScreen> {
               ),
             ),
             const SizedBox(height: 2),
-            Text(
-              'Magnetic north',
-              style: textTheme.bodySmall?.copyWith(
-                color: scheme.onSurfaceVariant,
-              ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  northLabel,
+                  style: textTheme.bodySmall?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+                if (_waitingForGps && _heading != null) ...[
+                  const SizedBox(width: 6),
+                  SizedBox(
+                    width: 10,
+                    height: 10,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 1.5,
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ],
             ),
             const SizedBox(height: 12),
-            // Compass dial
             Expanded(
               child: LayoutBuilder(
                 builder: (context, constraints) {
