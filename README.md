@@ -1,4 +1,4 @@
-# pocket_compass
+# Pocket Compass
 
 A digital compass app made with Flutter for **iOS and Android** only (no web or desktop targets in this repo).
 
