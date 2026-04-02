@@ -7,6 +7,14 @@ import 'package:permission_handler/permission_handler.dart';
 import 'compass_painter.dart';
 import 'heading_smoothing.dart';
 
+/// Maps [0, 360) heading to 8-wind rose abbreviation (45° sectors).
+String _headingToCompass8(double degrees) {
+  final d = (degrees % 360 + 360) % 360;
+  const labels = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+  final idx = ((d + 22.5) ~/ 45) % 8;
+  return labels[idx];
+}
+
 class CompassScreen extends StatefulWidget {
   const CompassScreen({super.key});
 
@@ -194,7 +202,7 @@ class _CompassScreenState extends State<CompassScreen> {
                   bottom: 16,
                   child: Text(
                     heading != null
-                        ? '${heading.round()}° magnetic'
+                        ? '${heading.round()}° ${_headingToCompass8(heading)}'
                         : ' ',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
