@@ -1,4 +1,4 @@
-package com.nguyencongcuong.pocket_compass
+package com.cng.pocket_compass
 
 import io.flutter.embedding.android.FlutterActivity
 
