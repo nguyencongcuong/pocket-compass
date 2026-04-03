@@ -76,60 +76,118 @@
 <body>
   <main>
     <h1>Privacy Policy</h1>
-    <p class="meta"><span class="app">Pocket Compass</span> · Last updated: <time datetime="2026-04-03">3 April 2026</time></p>
+    <p class="meta"><span class="app">Pocket Compass</span> · Last updated: <time datetime="2026-04-10">10 April 2026</time></p>
 
     <p>
       This policy describes how <strong>Pocket Compass</strong> (“the App”), developed by
-      <strong>Cuong Nguyen</strong>, handles information when you use the mobile application on
+      <strong>Cuong Nguyen</strong> (“we”, “us”), handles information when you use the mobile application on
       <strong>iOS</strong> and <strong>Android</strong>. If you do not agree with this policy, please do not use the App.
+    </p>
+    <p>
+      This document is written to align with common store disclosure expectations, including the
+      <strong>Google Play Data safety</strong> section (how user data is collected, shared, and secured).
+      Your answers in Play Console must match what the App and its dependencies actually do; use this policy
+      together with Google’s definitions in the Data safety form.
+    </p>
+
+    <h2>How we use key terms (including Google Play)</h2>
+    <p>
+      On Google Play, <strong>“collect”</strong> generally means user data is transmitted <strong>off the device</strong>
+      to the app developer or a third party (subject to Google’s listed exceptions). <strong>“Share”</strong> means
+      user data is transferred to a third party (on or off the device), again subject to Google’s exceptions.
+      Processing that stays entirely on the device and is not sent to us or a third party as part of your use of
+      the App is <strong>on-device processing</strong> from the App’s perspective.
     </p>
 
     <h2>Summary</h2>
     <ul>
-      <li>The App is a <strong>digital compass</strong> and does not require you to create an account.</li>
+      <li>The App is a <strong>digital compass</strong> and does not require an account or login.</li>
       <li>We do <strong>not</strong> sell your personal information.</li>
-      <li>Sensor and location data used for compass and declination features are processed <strong>on your device</strong> to operate the App. We do not operate our own servers to collect this data from the App.</li>
-      <li>The App does not include third-party analytics or advertising SDKs in its current dependency set.</li>
+      <li>We do <strong>not</strong> operate our own backend that receives your compass readings, raw location,
+        or similar data from the App for storage or profiling. The App is not designed to upload that data to
+        servers we control.</li>
+      <li>The App does not embed third-party <strong>analytics</strong> or <strong>advertising</strong> SDKs in
+        its published dependency set.</li>
+      <li>Location and sensor data are used <strong>to run the App on your device</strong> (heading, declination /
+        true north). The operating system and platform location stack (for example <strong>Google Play services</strong>
+        on Android, <strong>Apple</strong> location services on iOS) may process data under their own policies when
+        you use system location APIs.</li>
     </ul>
 
-    <h2>Information the App uses</h2>
-    <p>The App may access the following, depending on your device and permissions:</p>
+    <h2>Data the App accesses (by category)</h2>
+    <p>Depending on permissions and device capabilities, the App may involve the following:</p>
     <ul>
       <li>
-        <strong>Device location (when in use)</strong> — Requested so the App can estimate
-        <strong>magnetic declination</strong> and show headings relative to <strong>true north</strong>
-        where supported. Location is used for this calculation; it is not used to build a profile of you
-        for marketing. Processing is performed on the device as part of normal App operation.
+        <strong>Location (approximate or precise, while the App is in use)</strong> — Used to compute
+        <strong>magnetic declination</strong> and show headings relative to <strong>true north</strong> where
+        supported. The App uses this for that purpose; we do not use it to build an advertising or marketing
+        profile. Location is obtained through <strong>platform APIs</strong> (not a custom server we operate for
+        that purpose).
       </li>
       <li>
-        <strong>Compass / motion sensors</strong> — Used to determine heading for the compass display.
-        This occurs on your device.
+        <strong>Compass / device motion and orientation</strong> — Used to derive heading for the compass UI.
+        Handled on the device as part of normal App operation.
       </li>
       <li>
-        <strong>App version metadata</strong> — Read locally (for example, to display version information
-        in the App UI). This stays on your device.
+        <strong>App information</strong> — For example, app version from the system (<code>package_info_plus</code>)
+        to show version text in the UI. Read locally on the device.
       </li>
     </ul>
+
+    <h2>Collection and sharing by the developer</h2>
+    <p>
+      <strong>We do not intentionally collect</strong> personal or sensitive user data from the App by sending it
+      to servers we control for storage, analytics, or advertising. <strong>We do not intentionally share</strong>
+      such data with third parties for those purposes through the App.
+    </p>
+    <p>
+      You should still complete Play’s <strong>Data safety</strong> questionnaire based on <strong>all</strong> data
+      handling, including by <strong>libraries and the OS</strong>. For example, on Android, obtaining a location fix
+      may involve <strong>Google</strong> as part of the platform location stack; that is outside our direct control.
+      See Google’s help for how to declare location and optional “ephemeral” / on-device handling where applicable.
+    </p>
+
+    <h2>Libraries (SDKs) in the App</h2>
+    <p>The App bundles open-source Flutter plugins used for sensors, permissions, and platform metadata, including
+      (as shipped in source): <strong>flutter_compass</strong>, <strong>geolocator</strong>,
+      <strong>permission_handler</strong>, <strong>package_info_plus</strong>, and a local geomagnetic model
+      (<strong>geomag</strong>) for declination math. We do not add separate analytics or ad networks in that list.
+      Review each library’s documentation and Play’s Data safety guidance when you fill out the form.</p>
+
+    <h2>Security</h2>
+    <p>
+      We do not operate a user-facing cloud service for this App, so there are no developer-hosted account databases
+      or app-specific APIs to describe here. You should keep your device OS updated and only install the App from
+      trusted stores. Use device settings to revoke location access if you choose.
+    </p>
+
+    <h2>Retention and deletion</h2>
+    <p>
+      We do not retain user data from the App on infrastructure we operate. Data processed on your device is subject
+      to normal app and OS behavior. Uninstalling the App removes the App’s local data from your device; we have no
+      corresponding cloud copy to delete on your behalf.
+    </p>
 
     <h2>Permissions (Android)</h2>
     <p>On Android, the App may declare permissions including:</p>
     <ul>
       <li><code>ACCESS_COARSE_LOCATION</code> and <code>ACCESS_FINE_LOCATION</code> — for the location-based declination feature described above.</li>
-      <li><code>INTERNET</code> — May be present in the manifest (for example, as required by the platform or dependencies). The App is not designed to upload your compass or location data to developer-controlled servers.</li>
+      <li><code>INTERNET</code> — May be present in the manifest (for example, for the platform or transitive dependencies). The App is not designed to send your compass or location data to developer-controlled servers.</li>
     </ul>
 
     <h2>Permissions (iOS)</h2>
     <p>
       On iOS, the App requests <strong>location when in use</strong> where needed for declination /
-      true-north related functionality, consistent with the system permission prompt.
+      true-north related functionality, consistent with the system permission prompt
+      (<code>NSLocationWhenInUseUsageDescription</code>).
     </p>
 
-    <h2>Third parties</h2>
+    <h2>Third parties (platform providers)</h2>
     <p>
-      Apple and Google provide the operating system and may process data according to their own policies.
-      The App relies on standard platform APIs and open-source libraries bundled in the application
-      (for example, for sensors, permissions, and geolocation). Review your device privacy settings to
-      manage location and sensor access.
+      <strong>Apple</strong> and <strong>Google</strong> provide the operating system, Play Store / App Store
+      distribution, and system services. They may process data according to their own policies when you use your
+      device. The App relies on standard platform APIs and bundled libraries as described above. Review your device
+      privacy settings to manage location and sensor access.
     </p>
 
     <h2>Children’s privacy</h2>
@@ -149,6 +207,27 @@
       For questions about this privacy policy, contact:<br />
       <a href="mailto:c.ng.devie@gmail.com">c.ng.devie@gmail.com</a>
     </p>
+
+    <h2>Google Play Data safety (form checklist)</h2>
+    <p>
+      Play Console’s <strong>Data safety</strong> questions use Google’s definitions of <strong>collect</strong> and
+      <strong>share</strong> (data leaving the user’s device to you or a third party, subject to Google’s exceptions).
+      You must declare data handled by the App <strong>and</strong> by bundled SDKs, even if data is not sent to
+      servers you operate.
+    </p>
+    <p>For this App, review especially:</p>
+    <ul>
+      <li><strong>Location</strong> — Declared in the manifest and used for declination / true north. Declare purposes
+        (for example, <em>App functionality</em>) and whether data is <strong>collected</strong>, <strong>shared</strong>,
+        or only processed in ways Google allows you to describe as on-device / ephemeral, following current Play
+        Console options and help articles.</li>
+      <li><strong>Device or other IDs</strong> — Only declare if an SDK or the OS stack actually transmits identifiers
+        off-device in a way that counts as collection under Google’s rules for your build.</li>
+      <li><strong>Security practices</strong> — Answer the security questions truthfully for your app; we do not host
+        a separate backend for this App’s user data.</li>
+    </ul>
+    <p>If anything in this policy and your Play declarations disagree, <strong>update the policy or the form</strong> so
+      they match.</p>
 
     <footer>
       <p><span class="app">Pocket Compass</span> — independent developer app. This page is hosted for store listing and user transparency.</p>
