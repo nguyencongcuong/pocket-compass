@@ -1,0 +1,17 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "flutter",
+			"command": "flutter",
+			"args": [
+				"run",
+				"-d",
+				"R5CY82YSVVL"
+			],
+			"problemMatcher": [],
+			"label": "flutter: run -d R5CY82YSVVL",
+			"detail": "Running the app on the specified device"
+		}
+	]
+}
